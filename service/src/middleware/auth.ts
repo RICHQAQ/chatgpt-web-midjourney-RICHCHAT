@@ -3,12 +3,20 @@ import { Request, Response, NextFunction } from 'express';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 import md5 from 'md5';
+//解析token
+import jwt from 'jsonwebtoken';
 
 // 存储IP地址和错误计数的字典
 const ipErrorCount = {};
 
 // 存储被禁止登录的IP地址及禁止结束时间的字典
 const bannedIPs = {};
+
+declare module 'express' {
+  export interface Request {
+    user?: any; // 或者使用更具体的类型，例如 UserInterface
+  }
+}
 
 export const mlog =(...arg)=>{
   //const M_DEBUG = process.env.M_DEBUG
@@ -23,23 +31,49 @@ export const mlog =(...arg)=>{
   console.log( currentTime,...arg)
 }
 
-export const verify=  async ( req :Request , res:Response ) => {
-  try {
-    checkLimit( req, res );
-    const { token } = req.body as { token: string }
-    if (!token)
-      throw new Error('Secret key is empty')
+// 判断密钥函数，要进行修改 函数：verify
+// export const verify=  async ( req :Request , res:Response ) => {
+//   try {
+//     checkLimit( req, res );
+//     const { token } = req.body as { token: string }
+//     if (!token)
+//       throw new Error('Secret key is empty')
 
-    if (process.env.AUTH_SECRET_KEY !== token)
-      throw new Error('密钥无效 | Secret key is invalid')
+//     if (process.env.AUTH_SECRET_KEY !== token)
+//       throw new Error('密钥无效 | Secret key is invalid')
       
-    clearLimit( req, res);
-    res.send({ status: 'Success', message: 'Verify successfully', data: null })
+//     clearLimit( req, res);
+//     res.send({ status: 'Success', message: 'Verify successfully', data: null })
+//   }
+//   catch (error) {
+//     res.send({ status: 'Fail', message: error.message, data: null })
+//   }
+// }
+
+
+export const verify = async (req: Request, res: Response) => {
+  try {
+    checkLimit(req, res); // 检查请求限制
+    const { token } = req.body as { token: string };
+    if (!token)
+      throw new Error('Secret key is empty');
+
+    // 使用环境变量中的密钥验证 token
+    jwt.verify(token, process.env.AUTH_SECRET_KEY, (err, decoded) => {
+      if (err) {
+        // 如果验证失败，抛出错误
+        throw new Error('登录失败');
+      }
+      // 验证成功，清除限制并发送成功响应
+      clearLimit(req, res);
+      res.send({ status: 'Success', message: 'Verify successfully', data: decoded });
+    });
   }
   catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
+    // 捕获所有错误并发送失败响应
+    res.send({ status: 'Fail', message: error.message, data: null });
   }
-}
+};
 
 export const auth = async ( req :Request , res:Response , next:NextFunction ) => {
   
@@ -99,30 +133,65 @@ const clearLimit=  ( req :Request , res:Response )=>{
   bannedIPs[ipAddress] = 0;
   ipErrorCount[ipAddress]= 0;
 }
-
-export const authV2 = async ( req :Request , res:Response , next:NextFunction ) => {
+// 判断密钥函数，要进行修改 函数：authV2
+// export const authV2 = async ( req :Request , res:Response , next:NextFunction ) => {
   
-  const AUTH_SECRET_KEY = process.env.AUTH_SECRET_KEY
+//   const AUTH_SECRET_KEY = process.env.AUTH_SECRET_KEY
+//   if (isNotEmptyString(AUTH_SECRET_KEY)) {
+//     try {
+
+//       checkLimit( req, res );
+//       const Authorization = req.header('X-Ptoken')
+//       if ( !Authorization || Authorization.trim() !== AUTH_SECRET_KEY.trim())
+//         throw new Error('Error: 无访问权限 | No access rights')
+//       clearLimit( req, res);
+//       next()
+//        //throw new Error('Error: 无访问权限 | No access rights')
+//     }
+//     catch (error) { 
+//       res.status(423);
+//       res.send({ code: 'token_check', message: error.message ?? 'Please authenticate.', data: null })
+//     }
+//   }
+//   else {
+//     next()
+//   }
+// }
+
+
+export const authV2 = async (req: Request, res: Response, next: NextFunction) => {
+  const AUTH_SECRET_KEY = process.env.AUTH_SECRET_KEY;
+
   if (isNotEmptyString(AUTH_SECRET_KEY)) {
     try {
+      checkLimit(req, res);
 
-      checkLimit( req, res );
-      const Authorization = req.header('X-Ptoken')
-      if ( !Authorization || Authorization.trim() !== AUTH_SECRET_KEY.trim())
-        throw new Error('Error: 无访问权限 | No access rights')
-      clearLimit( req, res);
-      next()
-       //throw new Error('Error: 无访问权限 | No access rights')
+      const token = req.header('X-Ptoken');
+      if (!token) {
+        throw new Error('Error: 无访问权限 | No access rights');
+      }
+
+      // 使用环境变量中的密钥来验证 JWT
+      jwt.verify(token, AUTH_SECRET_KEY, (err, decoded) => {
+        if (err) {
+          clearLimit(req, res);
+          throw new Error('Invalid token: ' + err.message);
+        }
+        req.user = decoded; // 可以选择添加更多用户信息到请求对象
+        next();
+      });
+    } catch (error) {
+      res.status(423).send({ code: 'token_check', message: error.message ?? 'Please authenticate.', data: null });
     }
-    catch (error) { 
-      res.status(423);
-      res.send({ code: 'token_check', message: error.message ?? 'Please authenticate.', data: null })
-    }
+  } else {
+    next();
   }
-  else {
-    next()
-  }
-}
+};
+
+// function isNotEmptyString(str: any): boolean {
+//   return typeof str === 'string' && str.trim() !== '';
+// }
+
 
 export const turnstileCheck= async ( req :Request , res:Response , next:NextFunction ) => {
 

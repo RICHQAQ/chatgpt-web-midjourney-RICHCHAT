@@ -1,5 +1,5 @@
 import { ss } from '@/utils/storage'
-
+//记录的token
 const LOCAL_NAME = 'SECRET_TOKEN'
 
 export function getToken() {

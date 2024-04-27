@@ -17,6 +17,25 @@ import FormData  from 'form-data'
 import axios from 'axios';
 import AWS  from 'aws-sdk';
 import { v4 as uuidv4} from 'uuid';
+//增加登录逻辑
+import mongoose from 'mongoose';
+import User from './user/user';
+import { registerUser, loginUser, generateAuthToken } from './user/UserService';
+
+
+//登录逻辑
+// // app.ts
+// import express from 'express';
+// import userRoutes from './routes/userRoutes';
+// import { authV2 } from './auth';
+
+// const app = express();
+
+// app.use(express.json());
+// app.use('/users', userRoutes);
+// app.use(authV2);
+
+// // 其他的应用设置和路由
 
 
 const app = express()
@@ -32,6 +51,44 @@ app.use(express.static('public' ,{
 app.use(bodyParser.json({ limit: '10mb' })); //大文件传输
 
 
+//增加数据库连接
+mongoose.connect('mongodb://localhost:27017/mydatabase', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+} as mongoose.ConnectOptions)
+.then(() => {
+  console.log('Connected to MongoDB');
+})
+.catch(err => {
+  console.error('Error connecting to MongoDB', err);
+});
+
+
+// 注册新用户的路由
+app.post('/register', async (req, res) => {
+  try {
+      const { username, password } = req.body;
+      const user = await registerUser(username, password);
+      const token = generateAuthToken.call(user);  // 生成 token
+      res.send({ status: 'Success',user, token: token });
+  } catch (error) {
+      res.send({ status: 'Error', error: error.message });
+  }
+});
+
+// 用户登录的路由
+app.post('/login', async (req, res) => {
+  try {
+      const { username, password } = req.body;
+      const user = await loginUser(username, password);
+      const token = generateAuthToken.call(user);  // 生成 token
+      res.send({ status: 'Success',user, token: token });
+  } catch (error) {
+    res.send({ status: 'Error',error: error.message, stack: error.stack });
+  }
+});
+
+
 
 app.all('*', (_, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
@@ -39,7 +96,7 @@ app.all('*', (_, res, next) => {
   res.header('Access-Control-Allow-Methods', '*')
   next()
 })
-
+//需要更改验证器
 router.post('/chat-process',authV2 , async (req, res) => { //[authV2, limiter]
   res.setHeader('Content-type', 'application/octet-stream')
 
@@ -66,7 +123,7 @@ router.post('/chat-process',authV2 , async (req, res) => { //[authV2, limiter]
   }
 })
 
-router.post('/config', auth, async (req, res) => {
+router.post('/config', authV2, async (req, res) => {
   try {
     const response = await chatConfig()
     res.send(response)

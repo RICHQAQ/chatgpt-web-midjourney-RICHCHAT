@@ -69,6 +69,21 @@ export function fetchVerify<T>(token: string) {
   })
 }
 
+export function fetchLogin<T>(username: string, password: string) {
+  return post<T>({
+    url: '/login',
+    data: { username, password },
+  });
+}
+
+// 注册请求函数
+export function fetchRegister<T>(username: string, password: string) {
+  return post<T>({
+    url: '/register',
+    data: { username, password },
+  });
+}
+
 export * from "./mjapi"
 export * from "./mjsave"
 export * from "./openapi"

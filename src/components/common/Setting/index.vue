@@ -8,6 +8,7 @@ import aiSetServer from '@/views/mj/aiSetServer.vue'
 import About from './About.vue'
 import { homeStore, useAuthStore } from '@/store'
 import { SvgIcon } from '@/components/common'
+import User from './User.vue'
 
 interface Props {
   visible: boolean
@@ -69,14 +70,24 @@ const show = computed({
           </template>
           <aiSetServer />
         </NTabPane>
-        <NTabPane name="Config" tab="Config">
+
+				<NTabPane name="Config" tab="Config">
+          <template #tab>
+            <SvgIcon class="text-lg" icon="ri:user-settings-line" />
+            <!-- <span class="ml-2">{{ $t('setting.config') }}</span> -->
+            <span class="ml-2">{{ $t('mjset.user') }}</span>
+          </template>
+          <User />
+        </NTabPane>
+
+        <!-- <NTabPane name="Config" tab="Config">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:list-settings-line" />
-            <!-- <span class="ml-2">{{ $t('setting.config') }}</span> -->
+            <span class="ml-2">{{ $t('setting.config') }}</span>
             <span class="ml-2">{{ $t('mjset.about') }}</span>
           </template>
           <About />
-        </NTabPane>
+        </NTabPane> -->
 
       </NTabs>
     </div>

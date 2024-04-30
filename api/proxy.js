@@ -29,3 +29,32 @@ module.exports = (req, res) => {
         }
     })(req, res)
 }
+
+// module.exports = function(app) {
+//   // 如果请求以/mjapi开头，将请求代理到MJ_SERVER
+//   app.use('/mjapi', createProxyMiddleware({
+//     target: process.env.MJ_SERVER || 'https://api.openai.com',
+//     changeOrigin: true,
+//     headers: {
+//       'Mj-Api-Secret': process.env.MJ_API_SECRET
+//     },
+//     pathRewrite: { '^/mjapi/': '/' }
+//   }));
+
+//   // 如果请求以/openapi开头，将请求代理到OPENAI_API_BASE_URL
+//   app.use('/openapi', createProxyMiddleware({
+//     target: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com',
+//     changeOrigin: true,
+//     headers: {
+//       'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY
+//     },
+//     pathRewrite: { '^/openapi/': '/' }
+//   }));
+
+//   // 如果请求以/api开头，将请求代理到VITE_APP_API_BASE_URL
+//   app.use('/api', createProxyMiddleware({
+//     target: process.env.VITE_APP_API_BASE_URL || 'http://127.0.0.1:3002',
+//     changeOrigin: true,
+//     pathRewrite: { '^/api/': '/' }
+//   }));
+// };

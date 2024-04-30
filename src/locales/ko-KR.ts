@@ -193,7 +193,7 @@ export default {
     "server": "서버"
     ,"about": "소개"
     ,"model": "모델"
-    ,"sysname": "AI 그림"
+    ,"sysname": "RICHCHAT"
   },
   "mjtab": {
     "chat": "대화"
@@ -385,7 +385,7 @@ export default {
     "generate": "노래 만들기",
     "generately": "가사 생성",
     "nodata": "곡 목록을 보려면 먼저 곡을 작성하세요",
-    
+
     "menu": "음악",
     "menuinfo": "Suno 음악 생성",
     "server": "Suno API 엔드포인트",

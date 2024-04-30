@@ -23,6 +23,7 @@ const password = ref('')
 const Registerusername = ref('')
 const Registerpassword1 = ref('')
 const Registerpassword2 = ref('')
+const invite = ref('')
 const isLoginMode = ref(true)  // 状态来切换登录和注册模式
 
 // const disabled = computed(() => !token.value.trim() || loading.value)
@@ -101,7 +102,7 @@ async function handleRegister() {
       ms.error("密码长度必须为6到12个字符之间");
       return;
     }
-    const response: any = await fetchRegister<{ token: string }>(Registerusername.value, Registerpassword1.value);
+    const response: any = await fetchRegister<{ token: string }>(Registerusername.value, Registerpassword1.value, invite.value);
     // 存储 token, 更新状态等
     console.log(response);
     authStore.setToken(response.token);
@@ -135,7 +136,7 @@ function handlePress(event: KeyboardEvent) {
       <div class="space-y-4">
         <header class="space-y-2">
           <h2 class="text-2xl font-bold text-center text-slate-800 dark:text-neutral-200">
-            欢迎来到 RICHCHAT
+						{{ $t('common.welcome') }}
           </h2>
           <p class="text-base text-center text-slate-500 dark:text-slate-500">
             {{ $t('common.unauthorizedTips') }}
@@ -159,7 +160,7 @@ function handlePress(event: KeyboardEvent) {
       <div class="space-y-4">
         <header class="space-y-2">
           <h2 class="text-2xl font-bold text-center text-slate-800 dark:text-neutral-200">
-            欢迎来到 RICHCHAT
+            {{ $t('common.welcome') }}
           </h2>
           <p class="text-base text-center text-slate-500 dark:text-slate-500">
             <!-- {{ $t('common.unauthorizedTips') }} -->
@@ -171,6 +172,7 @@ function handlePress(event: KeyboardEvent) {
         <NInput v-model:value="Registerusername" placeholder="请输入用户名"/>
         <NInput v-model:value="Registerpassword1" placeholder="请输入密码，请确保两次输入一致" type="password"/>
         <NInput v-model:value="Registerpassword2" placeholder="请输入密码，请确保两次输入一致" type="password"/>
+				<NInput v-model:value="invite" placeholder="邀请码" />
         <NButton block :loading="loading" @click="handleRegister" :disabled="Registerdisabled" type="primary">
           注册
         </NButton>

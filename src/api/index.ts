@@ -56,7 +56,7 @@ export function fetchChatAPIProcess<T = any>(
 export function fetchSession<T>() {
   if (homeStore.myData.isClient)
   return {"status":"Success","message":"","data":{"isHideServer":false,"isUpload":false,"auth":false,"model":"ChatGPTAPI","amodel":"gpt-4","isApiGallery":false,"cmodels":"","baiduId":"9d5fa7fc2f5fd585aa8fd3010d19be1e","googleId":"","notify":"","disableGpt4":"","isWsrv":"","uploadImgSize":"1","gptUrl":"","theme":"dark","isCloseMdPreview":false}}
-  
+
   return post<T>({
     url: '/session',
   })
@@ -76,14 +76,30 @@ export function fetchLogin<T>(username: string, password: string) {
   });
 }
 
-// 注册请求函数
-export function fetchRegister<T>(username: string, password: string) {
+// 注册请求
+export function fetchRegister<T>(username: string, password: string,invite :string) {
   return post<T>({
     url: '/register',
-    data: { username, password },
+    data: { username, password,invite},
   });
 }
 
+
+// 请求计费
+export function fetchCost<T>(id:any, message:any, response:any, model:any) {
+  return post<T>({
+    url: '/cost',
+    data: { id, message, response, model},
+  });
+}
+
+// 增加查询余额的接口
+export function fetchuser<T>(id:any) {
+	return post<T>({
+		url: '/user',
+		data: {id},
+	});
+}
 export * from "./mjapi"
 export * from "./mjsave"
 export * from "./openapi"

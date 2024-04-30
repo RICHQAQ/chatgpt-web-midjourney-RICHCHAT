@@ -19,8 +19,8 @@ import AWS  from 'aws-sdk';
 import { v4 as uuidv4} from 'uuid';
 //增加登录逻辑
 import mongoose from 'mongoose';
-import User from './user/user';
-import { registerUser, loginUser, generateAuthToken } from './user/UserService';
+// import User from './user/user';
+import { registerUser, loginUser, generateAuthToken ,saveRecordAndUpdateBalance,getBalanceAndUsage, getUserBalance} from './user/UserService';
 
 
 //登录逻辑
@@ -52,7 +52,7 @@ app.use(bodyParser.json({ limit: '10mb' })); //大文件传输
 
 
 //增加数据库连接
-mongoose.connect('mongodb://localhost:27017/mydatabase', {
+mongoose.connect(process.env.MONGODB_URI as string, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 } as mongoose.ConnectOptions)
@@ -63,43 +63,20 @@ mongoose.connect('mongodb://localhost:27017/mydatabase', {
   console.error('Error connecting to MongoDB', err);
 });
 
-
-// 注册新用户的路由
-app.post('/register', async (req, res) => {
-  try {
-      const { username, password } = req.body;
-      const user = await registerUser(username, password);
-      const token = generateAuthToken.call(user);  // 生成 token
-      res.send({ status: 'Success',user, token: token });
-  } catch (error) {
-      res.send({ status: 'Error', error: error.message });
-  }
-});
-
-// 用户登录的路由
-app.post('/login', async (req, res) => {
-  try {
-      const { username, password } = req.body;
-      const user = await loginUser(username, password);
-      const token = generateAuthToken.call(user);  // 生成 token
-      res.send({ status: 'Success',user, token: token });
-  } catch (error) {
-    res.send({ status: 'Error',error: error.message, stack: error.stack });
-  }
-});
-
-
-
 app.all('*', (_, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Headers', 'authorization, Content-Type')
   res.header('Access-Control-Allow-Methods', '*')
   next()
 })
-//需要更改验证器
-router.post('/chat-process',authV2 , async (req, res) => { //[authV2, limiter]
-  res.setHeader('Content-type', 'application/octet-stream')
 
+
+
+
+//需要更改验证器
+router.post('/chat-process',authV2 , async (req:any, res) => { //[authV2, limiter]
+  res.setHeader('Content-type', 'application/octet-stream')
+//增加提供id
   try {
     const { prompt, options = {}, systemMessage, temperature, top_p } = req.body as RequestProps
     let firstChunk = true
@@ -114,11 +91,13 @@ router.post('/chat-process',authV2 , async (req, res) => { //[authV2, limiter]
       temperature,
       top_p,
     })
+    // console.log(req)
   }
   catch (error) {
     res.write(JSON.stringify(error))
   }
   finally {
+    // console.log('finally',res)
     res.end()
   }
 })
@@ -147,10 +126,10 @@ router.post('/session', async (req, res) => {
     const notify = process.env.SYS_NOTIFY?? "" ;
     const disableGpt4 = process.env.DISABLE_GPT4?? "" ;
     const isUploadR2 = isNotEmptyString(process.env.R2_DOMAIN);
-    const isWsrv =  process.env.MJ_IMG_WSRV?? "" 
-    const uploadImgSize =  process.env.UPLOAD_IMG_SIZE?? "1" 
-    const gptUrl = process.env.GPT_URL?? ""; 
-    const theme = process.env.SYS_THEME?? "dark"; 
+    const isWsrv =  process.env.MJ_IMG_WSRV?? ""
+    const uploadImgSize =  process.env.UPLOAD_IMG_SIZE?? "1"
+    const gptUrl = process.env.GPT_URL?? "";
+    const theme = process.env.SYS_THEME?? "dark";
     const isCloseMdPreview = process.env.CLOSE_MD_PREVIEW?true:false
     const uploadType= process.env.UPLOAD_TYPE
     const turnstile= process.env.TURNSTILE_SITE
@@ -169,6 +148,70 @@ router.post('/session', async (req, res) => {
 
 router.post('/verify', verify)
 router.get('/reg', regCookie )
+
+
+// 注册新用户的路由
+router.post('/register', async (req, res) => {
+  try {
+      const { username, password,invite } = req.body;
+      const user = await registerUser(username, password,invite);
+      const token = generateAuthToken.call(user);  // 生成 token
+      res.send({ status: 'Success',user, token: token });
+  } catch (error) {
+      res.send({ status: 'Error', error: error.message });
+  }
+});
+
+// 用户登录的路由
+router.post('/login', async (req, res) => {
+  try {
+      const { username, password } = req.body;
+      const user = await loginUser(username, password);
+      const token = generateAuthToken.call(user);  // 生成 token
+      res.send({ status: 'Success',user, token: token });
+  } catch (error) {
+    res.send({ status: 'Error',error: error.message, stack: error.stack });
+  }
+});
+
+
+// 计算tokens
+router.post('/cost',auth, async (req, res) => {
+	// console.log('ACost',req.body);
+	// mlog('ACost',req.body);
+	try {
+		const { id,message,response,model} = req.body as { id:any,message: string,response:any,model:any }
+		// const tokens = encodeChat(message)
+		const cost = await saveRecordAndUpdateBalance(id,message,response,model);
+		res.send({ status: 'Success', message: cost ,data:null })
+	}
+	catch (error) {
+		mlog('ACost',error);
+		res.send({ status: 'Fail', message: error.message, data: null })
+	}
+
+})
+
+// 查询用户信息
+router.post('/user',auth, async (req:any, res) => {
+	try{
+		// console.log(req.id);
+		const getUser:any = await getBalanceAndUsage(req.body.id);
+		// console.log(getUser);
+		if(getUser.status == "Failed"){
+			res.send({ status: 'Fail', message: getUser.message, data: null });
+		}
+		else if(getUser.status == "Success"){
+			res.send({ status: 'Success', username: getUser.user.username,userbalance: getUser.user.balance, usage: getUser.totalUsage });
+		}
+		else{
+			res.send({ status: 'Fail', message: 'Unknown Error', data: null });
+		}
+	}catch(e){
+		mlog(e);
+		res.send({ status: 'Fail', message: e.message, data: null });
+	}
+})
 
  const API_BASE_URL = isNotEmptyString(process.env.OPENAI_API_BASE_URL)
     ? process.env.OPENAI_API_BASE_URL
@@ -223,7 +266,7 @@ if(isUpload){
   if( process.env.FILE_SERVER){
     app.use('/openapi/v1/upload',
     upload2.single('file'),
-      async (req, res, next) => {
+      async (req:any, res, next) => {
         //console.log( "boday",req.body ,  req.body.model );
         if(req.file.buffer) {
           const fileBuffer = req.file.buffer;
@@ -250,7 +293,7 @@ if(isUpload){
     );
   }
   else{
-    app.use('/openapi/v1/upload', authV2, upload.single('file'), (req, res) => {
+    app.use('/openapi/v1/upload', authV2, upload.single('file'), (req:any, res) => {
     //res.send('文件上传成功！');
     res.setHeader('Content-type', 'application/json' );
     if(req.file.filename) res.json({ url:`/uploads/${formattedDate()}/${ req.file.filename  }`,created:Date.now() })
@@ -318,7 +361,7 @@ app.post('/openapi/pre_signed', (req, res) => {
 app.use(
   '/openapi/v1/audio/transcriptions',authV2,
   upload2.single('file'),
-  async (req, res, next) => {
+  async (req:any, res, next) => {
     //console.log( "boday",req.body ,  req.body.model );
     if(req.file.buffer) {
       const fileBuffer = req.file.buffer;
@@ -347,24 +390,26 @@ app.use(
   }
 );
 
- 
+
 
 //代理openai 接口
 app.use('/openapi' ,authV2, turnstileCheck, proxy(API_BASE_URL, {
   https: false, limit: '10mb',
   proxyReqPathResolver: function (req) {
+    mlog(req.body.message);
     return req.originalUrl.replace('/openapi', '') // 将URL中的 `/openapi` 替换为空字符串
   },
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     proxyReqOpts.headers['Authorization'] ='Bearer '+ process.env.OPENAI_API_KEY;
     proxyReqOpts.headers['Content-Type'] = 'application/json';
     proxyReqOpts.headers['Mj-Version'] = pkg.version;
+    // mlog(proxyReqOpts);
     return proxyReqOpts;
   },
   //limit: '10mb'
 }));
 
-//代理sunoApi 接口 
+//代理sunoApi 接口
 app.use('/sunoapi' ,authV2, proxy(process.env.SUNO_SERVER??  API_BASE_URL, {
   https: false, limit: '10mb',
   proxyReqPathResolver: function (req) {
@@ -373,12 +418,12 @@ app.use('/sunoapi' ,authV2, proxy(process.env.SUNO_SERVER??  API_BASE_URL, {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     //mlog("sunoapi")
     if ( process.env.SUNO_KEY ) proxyReqOpts.headers['Authorization'] ='Bearer '+process.env.SUNO_KEY;
-    else   proxyReqOpts.headers['Authorization'] ='Bearer '+process.env.OPENAI_API_KEY;  
+    else   proxyReqOpts.headers['Authorization'] ='Bearer '+process.env.OPENAI_API_KEY;
     proxyReqOpts.headers['Content-Type'] = 'application/json';
     proxyReqOpts.headers['Mj-Version'] = pkg.version;
     return proxyReqOpts;
   },
-  
+
 }));
 
 

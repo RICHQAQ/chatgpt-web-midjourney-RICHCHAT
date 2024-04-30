@@ -195,7 +195,7 @@ export default {
         "server": "Serveur",
         "about": "À Propos",
         "model": "Modèle",
-        "sysname": "Dessin AI"
+        "sysname": "RICHCHAT"
     },
     "mjtab": {
         "chat": "Chat",

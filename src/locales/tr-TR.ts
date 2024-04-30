@@ -194,7 +194,7 @@ export default {
         "server": "Sunucu",
         "about": "Hakkında",
         "model": "Model",
-        "sysname": "Yapay Zeka Çizimi"
+        "sysname": "RICHCHAT"
     },
     "mjtab": {
         "chat": "Sohbet",

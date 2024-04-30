@@ -196,7 +196,7 @@ export default {
     "server": "Сервер",
     "about": "О нас",
     "model": "Модель",
-    "sysname": "Искусственный интеллект для рисования"
+    "sysname": "RICHCHAT"
   },
   "mjtab": {
     "chat": "Чат",
@@ -395,6 +395,6 @@ export default {
     "server": "Конечная точка API Suno",
     "serverabout": "Связанные с Suno",
     "setOpenKeyPlaceholder": "Связанный ключ для API Suno; необязательно"
-    
+
    }
 }

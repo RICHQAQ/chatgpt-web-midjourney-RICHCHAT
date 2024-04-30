@@ -192,7 +192,7 @@ export default {
     "server": "服務端",
     "about": "關於",
     "model": "模型",
-    "sysname": "AI繪圖"
+    "sysname": "RICHCHAT"
   },
   "mjtab": {
     "chat": "對話",

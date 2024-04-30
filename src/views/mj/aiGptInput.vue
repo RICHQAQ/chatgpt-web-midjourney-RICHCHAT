@@ -69,7 +69,7 @@ function selectFile(input:any){
 }
 
 const myToken =ref({remain:0,modelTokens:'4k'});
-const funt = async ()=>{
+const funt = async ()=>{//计算tokens的例子
     const d = await countTokens( dataSources.value, mvalue.value ,chatStore.active??1002 ) 
     myToken.value=d ;
     return d ;
